@@ -7,7 +7,13 @@ from ultralytics import YOLO
 app = FastAPI()
 
 # Загрузка модели YOLOv8
-model = YOLO('best (2).pt')  # Замените на путь к вашей модели
+model = YOLO('best (2).pt')
+
+object_dict = {0: "персик", 1: "яблоко", 2: "капуста", 3: "кукуруза", 4: "огурец", 7: "баклажан",
+               9: "чеснок", 10: "виноград", 11: "перец", 12: "авокадо", 13: "киви", 14: "лимон",
+               15: "манго", 16: "лук красный", 21: "груша", 23: "банан", 24: "ананас", 28: "тыква",
+               30: "клубника", 31: "помидор", 32: "редис", 33: "арбуз", 34: "свёкла", 35: "кабачок",
+               36: "перец балгарский", 38: "брокколи", 39: "капуста", 40: "морковь"}
 
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
@@ -21,16 +27,14 @@ async def predict(file: UploadFile = File(...)):
     results = model(image)
 
     # Извлекаем названия классов
-    if results and results[0].names:
-        detected_classes = results[0].names
-        predictions = results[0].pred[0]
-
-        # Проверяем наличие предсказаний
-        if len(predictions) > 0:
-            class_id = int(predictions[0][5])  # ID класса
-            fruit_name = detected_classes[class_id]
-            return JSONResponse(content={"fruit": fruit_name})
-
+    pri = []
+    for r in results:
+        for c in r.boxes.cls:
+            obj_index = int(model.names[int(c)])
+            if obj_index in object_dict:
+                pri.append(object_dict[obj_index])
+    if len(pri):
+        return JSONResponse(content={"fruit": pri})
     return JSONResponse(content={"error": "No fruit detected"})
 
 @app.get("/")
